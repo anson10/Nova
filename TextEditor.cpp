@@ -11,7 +11,7 @@
 #include <QStatusBar>
 #include <QStyleFactory>
 #include <QStyle>
-#include <QFontComboBox>
+#include <QComboBox>  // Changed from QFontComboBox to QComboBox
 #include <QSpinBox>
 
 TextEditor::TextEditor(QWidget *parent)
@@ -68,7 +68,7 @@ TextEditor::TextEditor(QWidget *parent)
     connect(italicAction, &QAction::triggered, this, &TextEditor::formatItalic);
     formatMenu->addAction(italicAction);
     
-    QAction *underlineAction = new QAction(QIcon::fromTheme("format-text-underline"), "Underline", this);
+    QAction *underlineAction = new QAction(QIcon::fromTheme("format-text-italic"), "Underline", this);
     underlineAction->setShortcut(QKeySequence::Underline);
     connect(underlineAction, &QAction::triggered, this, &TextEditor::formatUnderline);
     formatMenu->addAction(underlineAction);
@@ -121,10 +121,16 @@ void TextEditor::setupToolbar() {
     toolbar->addAction(QIcon::fromTheme("format-text-underline"), "Underline", this, &TextEditor::formatUnderline);
     toolbar->addSeparator();
     
-    // Add font selection
-    fontComboBox = new QFontComboBox(toolbar);
-    fontComboBox->setCurrentFont(QFont("Arial"));  // Default font
-    connect(fontComboBox, &QFontComboBox::currentFontChanged, this, &TextEditor::changeFont);
+    // Add font selection with a predefined list
+    fontComboBox = new QComboBox(toolbar);
+    QStringList fonts = {
+        "Arial", "Times New Roman", "Courier New", "Helvetica", "Verdana",
+        "Georgia", "Trebuchet MS", "Comic Sans MS", "Impact", "Monospace",
+        "Roboto", "Open Sans", "Lato", "Montserrat", "Poppins"
+    };
+    fontComboBox->addItems(fonts);
+    fontComboBox->setCurrentText("Arial");  // Default font
+    connect(fontComboBox, &QComboBox::currentTextChanged, this, &TextEditor::changeFont);
     toolbar->addWidget(fontComboBox);
     
     // Add font size selection
@@ -175,9 +181,9 @@ void TextEditor::updateStatusBar() {
     statusLabel->setText(QString("Words: %1 | Lines: %2 | Col: %3").arg(wordCount).arg(lineCount).arg(column));
 }
 
-void TextEditor::changeFont(const QFont &font) {
+void TextEditor::changeFont(const QString &fontName) {
     QTextCharFormat fmt = textArea->currentCharFormat();
-    fmt.setFont(font);
+    fmt.setFont(QFont(fontName));
     textArea->setCurrentCharFormat(fmt);
     textArea->setFocus();  // Keep focus on text area
 }
