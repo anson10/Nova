@@ -11,8 +11,10 @@
 #include <QStatusBar>
 #include <QStyleFactory>
 #include <QStyle>
-#include <QComboBox>  // Changed from QFontComboBox to QComboBox
+#include <QComboBox>
 #include <QSpinBox>
+#include <QTextListFormat>
+#include <QTextList>
 
 TextEditor::TextEditor(QWidget *parent)
     : QMainWindow(parent), isDarkMode(false)
@@ -68,10 +70,20 @@ TextEditor::TextEditor(QWidget *parent)
     connect(italicAction, &QAction::triggered, this, &TextEditor::formatItalic);
     formatMenu->addAction(italicAction);
     
-    QAction *underlineAction = new QAction(QIcon::fromTheme("format-text-italic"), "Underline", this);
+    QAction *underlineAction = new QAction(QIcon::fromTheme("format-text-underline"), "Underline", this);
     underlineAction->setShortcut(QKeySequence::Underline);
     connect(underlineAction, &QAction::triggered, this, &TextEditor::formatUnderline);
     formatMenu->addAction(underlineAction);
+    
+    QAction *bulletListAction = new QAction(QIcon::fromTheme("format-list-unordered"), "Bullet List", this);
+    bulletListAction->setShortcut(Qt::CTRL | Qt::Key_L);
+    connect(bulletListAction, &QAction::triggered, this, &TextEditor::insertBulletList);
+    formatMenu->addAction(bulletListAction);
+    
+    QAction *numberedListAction = new QAction(QIcon::fromTheme("format-list-ordered"), "Numbered List", this);
+    numberedListAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_L);
+    connect(numberedListAction, &QAction::triggered, this, &TextEditor::insertNumberedList);
+    formatMenu->addAction(numberedListAction);
     
     QAction *markdownAction = new QAction("Convert to Markdown", this);
     markdownAction->setShortcut(Qt::CTRL | Qt::Key_M);
@@ -119,6 +131,8 @@ void TextEditor::setupToolbar() {
     toolbar->addAction(QIcon::fromTheme("format-text-bold"), "Bold", this, &TextEditor::formatBold);
     toolbar->addAction(QIcon::fromTheme("format-text-italic"), "Italic", this, &TextEditor::formatItalic);
     toolbar->addAction(QIcon::fromTheme("format-text-underline"), "Underline", this, &TextEditor::formatUnderline);
+    toolbar->addAction(QIcon::fromTheme("format-list-unordered"), "Bullet List", this, &TextEditor::insertBulletList);
+    toolbar->addAction(QIcon::fromTheme("format-list-ordered"), "Numbered List", this, &TextEditor::insertNumberedList);
     toolbar->addSeparator();
     
     // Add font selection with a predefined list
@@ -185,14 +199,32 @@ void TextEditor::changeFont(const QString &fontName) {
     QTextCharFormat fmt = textArea->currentCharFormat();
     fmt.setFont(QFont(fontName));
     textArea->setCurrentCharFormat(fmt);
-    textArea->setFocus();  // Keep focus on text area
+    textArea->setFocus();
 }
 
 void TextEditor::changeFontSize(int size) {
     QTextCharFormat fmt = textArea->currentCharFormat();
     fmt.setFontPointSize(size);
     textArea->setCurrentCharFormat(fmt);
-    textArea->setFocus();  // Keep focus on text area
+    textArea->setFocus();
+}
+
+void TextEditor::insertBulletList() {
+    QTextCursor cursor = textArea->textCursor();
+    QTextListFormat listFormat;
+    listFormat.setStyle(QTextListFormat::ListDisc);  // Bullet points
+    cursor.createList(listFormat);
+    textArea->setTextCursor(cursor);
+    textArea->setFocus();
+}
+
+void TextEditor::insertNumberedList() {
+    QTextCursor cursor = textArea->textCursor();
+    QTextListFormat listFormat;
+    listFormat.setStyle(QTextListFormat::ListDecimal);  // Numbered list
+    cursor.createList(listFormat);
+    textArea->setTextCursor(cursor);
+    textArea->setFocus();
 }
 
 void TextEditor::openFile() {

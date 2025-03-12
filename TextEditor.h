@@ -5,7 +5,7 @@
 #include <QTextEdit>
 #include <QSyntaxHighlighter>
 #include <QLabel>
-#include <QComboBox>  // Changed from QFontComboBox to QComboBox
+#include <QComboBox>
 #include <QSpinBox>
 
 class SyntaxHighlighter;
@@ -30,14 +30,16 @@ private slots:
     void convertToMarkdown();
     void toggleDarkMode();
     void updateStatusBar();
-    void changeFont(const QString &fontName);  // Changed parameter type to QString
+    void changeFont(const QString &fontName);
     void changeFontSize(int size);
+    void insertBulletList();
+    void insertNumberedList();
 
 private:
     QTextEdit *textArea;
     SyntaxHighlighter *highlighter;
     QLabel *statusLabel;
-    QComboBox *fontComboBox; 
+    QComboBox *fontComboBox;
     QSpinBox *fontSizeSpinBox;
     bool isDarkMode;
     void setupToolbar();
