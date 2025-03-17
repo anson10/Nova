@@ -11,6 +11,7 @@ Welcome to **Nova**, a sleek and powerful text editor designed to make your writ
 
 ![Dark Mode](images/dark.png)
 *Dark Mode – for the night owls.*
+
 ---
 
 ## 🚀 Features
