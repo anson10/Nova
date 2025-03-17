@@ -1,0 +1,4 @@
+/home/anson/Text-Editor/build/CMakeFiles/TextEditor.dir
+/home/anson/Text-Editor/build/CMakeFiles/edit_cache.dir
+/home/anson/Text-Editor/build/CMakeFiles/rebuild_cache.dir
+/home/anson/Text-Editor/build/CMakeFiles/TextEditor_autogen.dir
