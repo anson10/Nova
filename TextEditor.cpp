@@ -15,6 +15,12 @@
 #include <QSpinBox>
 #include <QTextListFormat>
 #include <QTextList>
+#include <QDialog>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QTextToSpeech>
+#include <cmath> 
 
 TextEditor::TextEditor(QWidget *parent)
     : QMainWindow(parent), isDarkMode(false)
@@ -22,6 +28,9 @@ TextEditor::TextEditor(QWidget *parent)
     textArea = new QTextEdit(this);
     highlighter = new SyntaxHighlighter(textArea->document());
     setCentralWidget(textArea);
+    
+    // Initialize text-to-speech
+    speech = new QTextToSpeech(this);
     
     // Create menu bar
     QMenu *fileMenu = menuBar()->addMenu("File");
@@ -90,13 +99,34 @@ TextEditor::TextEditor(QWidget *parent)
     connect(markdownAction, &QAction::triggered, this, &TextEditor::convertToMarkdown);
     formatMenu->addAction(markdownAction);
     
-    // View menu for dark mode
+    // View menu for dark mode and new features
     QMenu *viewMenu = menuBar()->addMenu("View");
     QAction *darkModeAction = new QAction("Dark Mode", this);
     darkModeAction->setCheckable(true);
     darkModeAction->setShortcut(Qt::CTRL | Qt::Key_D);
     connect(darkModeAction, &QAction::triggered, this, &TextEditor::toggleDarkMode);
     viewMenu->addAction(darkModeAction);
+    
+    QAction *statisticsAction = new QAction("Show Statistics", this);
+    statisticsAction->setShortcut(Qt::CTRL | Qt::Key_T);
+    connect(statisticsAction, &QAction::triggered, this, &TextEditor::showStatistics);
+    viewMenu->addAction(statisticsAction);
+    
+    QMenu *toolsMenu = menuBar()->addMenu("Tools");
+    QAction *startSpeechAction = new QAction(QIcon::fromTheme("media-playback-start"), "Read Aloud", this);
+    startSpeechAction->setShortcut(Qt::CTRL | Qt::Key_R);
+    connect(startSpeechAction, &QAction::triggered, this, &TextEditor::startSpeech);
+    toolsMenu->addAction(startSpeechAction);
+    
+    QAction *pauseSpeechAction = new QAction(QIcon::fromTheme("media-playback-pause"), "Pause Reading", this);
+    pauseSpeechAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_R);
+    connect(pauseSpeechAction, &QAction::triggered, this, &TextEditor::pauseSpeech);
+    toolsMenu->addAction(pauseSpeechAction);
+    
+    QAction *stopSpeechAction = new QAction(QIcon::fromTheme("media-playback-stop"), "Stop Reading", this);
+    stopSpeechAction->setShortcut(Qt::CTRL | Qt::ALT | Qt::Key_R);
+    connect(stopSpeechAction, &QAction::triggered, this, &TextEditor::stopSpeech);
+    toolsMenu->addAction(stopSpeechAction);
     
     // Setup toolbar with font and size controls
     setupToolbar();
@@ -118,6 +148,7 @@ TextEditor::~TextEditor() {
     delete textArea;
     delete fontComboBox;
     delete fontSizeSpinBox;
+    delete speech;
 }
 
 void TextEditor::setupToolbar() {
@@ -153,6 +184,12 @@ void TextEditor::setupToolbar() {
     fontSizeSpinBox->setValue(12);     // Default size
     connect(fontSizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &TextEditor::changeFontSize);
     toolbar->addWidget(fontSizeSpinBox);
+    
+    // Add text-to-speech controls to toolbar
+    toolbar->addSeparator();
+    toolbar->addAction(QIcon::fromTheme("media-playback-start"), "Read Aloud", this, &TextEditor::startSpeech);
+    toolbar->addAction(QIcon::fromTheme("media-playback-pause"), "Pause Reading", this, &TextEditor::pauseSpeech);
+    toolbar->addAction(QIcon::fromTheme("media-playback-stop"), "Stop Reading", this, &TextEditor::stopSpeech);
 }
 
 void TextEditor::applyStyle() {
@@ -212,7 +249,7 @@ void TextEditor::changeFontSize(int size) {
 void TextEditor::insertBulletList() {
     QTextCursor cursor = textArea->textCursor();
     QTextListFormat listFormat;
-    listFormat.setStyle(QTextListFormat::ListDisc);  // Bullet points
+    listFormat.setStyle(QTextListFormat::ListDisc);
     cursor.createList(listFormat);
     textArea->setTextCursor(cursor);
     textArea->setFocus();
@@ -221,10 +258,55 @@ void TextEditor::insertBulletList() {
 void TextEditor::insertNumberedList() {
     QTextCursor cursor = textArea->textCursor();
     QTextListFormat listFormat;
-    listFormat.setStyle(QTextListFormat::ListDecimal);  // Numbered list
+    listFormat.setStyle(QTextListFormat::ListDecimal);
     cursor.createList(listFormat);
     textArea->setTextCursor(cursor);
     textArea->setFocus();
+}
+
+void TextEditor::showStatistics() {
+    QString text = textArea->toPlainText();
+    int wordCount = text.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts).count();
+    int charCountWithSpaces = text.length();
+    int charCountNoSpaces = text.count(QRegularExpression("[^\\s]"));
+    int paragraphCount = text.split(QRegularExpression("\\n\\s*\\n"), Qt::SkipEmptyParts).count();
+    double wordsPerMinute = 200.0;  // Average reading speed
+    int readingTime = static_cast<int>(std::ceil(wordCount / wordsPerMinute));
+
+    QDialog *statsDialog = new QDialog(this);
+    statsDialog->setWindowTitle("Text Statistics");
+    QVBoxLayout *layout = new QVBoxLayout(statsDialog);
+    
+    layout->addWidget(new QLabel(QString("Word Count: %1").arg(wordCount)));
+    layout->addWidget(new QLabel(QString("Characters (with spaces): %1").arg(charCountWithSpaces)));
+    layout->addWidget(new QLabel(QString("Characters (no spaces): %1").arg(charCountNoSpaces)));
+    layout->addWidget(new QLabel(QString("Paragraphs: %1").arg(paragraphCount)));
+    layout->addWidget(new QLabel(QString("Estimated Reading Time: %1 minute(s)").arg(readingTime)));
+    
+    QPushButton *closeButton = new QPushButton("Close", statsDialog);
+    connect(closeButton, &QPushButton::clicked, statsDialog, &QDialog::accept);
+    layout->addWidget(closeButton);
+    
+    statsDialog->setLayout(layout);
+    statsDialog->exec();
+    delete statsDialog;
+}
+
+void TextEditor::startSpeech() {
+    QString text = textArea->toPlainText();
+    if (!text.isEmpty()) {
+        speech->say(text);
+    }
+}
+
+void TextEditor::pauseSpeech() {
+    if (speech->state() == QTextToSpeech::Speaking) {
+        speech->pause();
+    }
+}
+
+void TextEditor::stopSpeech() {
+    speech->stop();
 }
 
 void TextEditor::openFile() {

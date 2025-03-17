@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QComboBox>
 #include <QSpinBox>
+#include <QTextToSpeech>  // Added for text-to-speech
 
 class SyntaxHighlighter;
 
@@ -34,6 +35,10 @@ private slots:
     void changeFontSize(int size);
     void insertBulletList();
     void insertNumberedList();
+    void showStatistics();         // New slot for statistics dialog
+    void startSpeech();            // New slot for starting text-to-speech
+    void pauseSpeech();            // New slot for pausing text-to-speech
+    void stopSpeech();             // New slot for stopping text-to-speech
 
 private:
     QTextEdit *textArea;
@@ -41,6 +46,7 @@ private:
     QLabel *statusLabel;
     QComboBox *fontComboBox;
     QSpinBox *fontSizeSpinBox;
+    QTextToSpeech *speech;         // New member for text-to-speech
     bool isDarkMode;
     void setupToolbar();
     void applyStyle();
